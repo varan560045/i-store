@@ -13,6 +13,11 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
 
+/**
+ * Необходимо выбрать тему, спроектировать схему базы данных для нее
+ * и написать DAO с как минимум основными CRUD операциями для каждой сущности.
+ */
+
 public class ClientDao {
 
     public static final ClientDao INSTANCE = new ClientDao();

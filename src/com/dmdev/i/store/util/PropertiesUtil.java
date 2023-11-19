@@ -3,6 +3,10 @@ package com.dmdev.i.store.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+/**
+ * Необходимо выбрать тему, спроектировать схему базы данных для нее
+ * и написать DAO с как минимум основными CRUD операциями для каждой сущности.
+ */
 
 public class PropertiesUtil {
 
