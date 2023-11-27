@@ -5,6 +5,10 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+/**
+ * Необходимо выбрать тему, спроектировать схему базы данных для нее
+ * и написать DAO с как минимум основными CRUD операциями для каждой сущности.
+ */
 
 public class ConnectionManager {
 

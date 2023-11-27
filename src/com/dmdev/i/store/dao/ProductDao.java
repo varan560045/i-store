@@ -1,7 +1,7 @@
 package com.dmdev.i.store.dao;
 
-import com.dmdev.i.store.dto.ClientEntityFilter;
-import com.dmdev.i.store.entity.ClientEntity;
+import com.dmdev.i.store.dto.ProductEntityFilter;
+import com.dmdev.i.store.entity.ProductEntity;
 import com.dmdev.i.store.exception.DaoException;
 import com.dmdev.i.store.util.ConnectionManager;
 
@@ -9,68 +9,75 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
 
-/**
- * Необходимо выбрать тему, спроектировать схему базы данных для нее
- * и написать DAO с как минимум основными CRUD операциями для каждой сущности.
- */
+public class ProductDao {
 
-public class ClientDao {
 
-    public static final ClientDao INSTANCE = new ClientDao();
+
+    public static final ProductDao INSTANCE = new ProductDao();
     public static final String DELETE_SQL = """
-            DELETE FROM client
+            DELETE FROM product
             WHERE id = ?
             """;
     public static final String SAVE_SQL = """
-            INSERT INTO client(f_name, l_name, email, admission_id) 
-            VALUES (?, ?, ?, ?)
+            INSERT INTO product(product_name, price, category_id, manufacturer_id, quantity) 
+            VALUES (?, ?, ?, ?, ?)
             """;
 
     public static final String UPDATE_SQL = """
-            UPDATE client
-            SET f_name = ?,
-                l_name = ?,
-                email = ?,
-                admission_id = ?
+            UPDATE product
+            SET product_name = ?,
+                price = ?,
+                category_id = ?,
+                manufacturer_id = ?,
+                quantity = ?
             WHERE id = ?
             """;
 
     public static final String FIND_ALL_SQL = """
             SELECT id, 
-                    f_name, 
-                    l_name, 
-                    email, 
-                    admission_id
-            FROM client
+                    product_name, 
+                    price, 
+                    category_id, 
+                    manufacturer_id,
+                    quantity
+            FROM product
             """;
 
     public static final String FIND_BY_ID_SQL = """
             SELECT id, 
-                    f_name, 
-                    l_name, 
-                    email, 
-                    admission_id
-            FROM client
+                    product_name, 
+                    price, 
+                    category_id, 
+                    manufacturer_id,
+                    quantity
+            FROM product
             WHERE id = ?
             """;
 
-    private ClientDao(){
+    private ProductDao(){
     }
 
-    public List<ClientEntity> findAll(ClientEntityFilter filter){
+    public List<ProductEntity> findAll(ProductEntityFilter filter){
         List<Object> parameters = new ArrayList<>();
         List<String> whereSql = new ArrayList<>();
-        if (filter.email() != null){
-            whereSql.add("email LIKE ?");
-            parameters.add("%" + filter.email() + "%");
+        if (filter.productName() != null){
+            whereSql.add("product_name = ?");
+            parameters.add(filter.productName());
         }
-        if (filter.fName() != null){
-            whereSql.add("f_name = ?");
-            parameters.add(filter.fName());
+        if (filter.price() != 0){
+            whereSql.add("price = ?");
+            parameters.add(filter.price());
+        }
+        if (filter.categoryId() != 0){
+            whereSql.add("category_id = ?");
+            parameters.add(filter.categoryId());
+        }
+        if (filter.manufacturerId() != 0){
+            whereSql.add("manufacturer_id = ?");
+            parameters.add(filter.manufacturerId());
         }
         parameters.add(filter.limit());
         parameters.add(filter.offset());
@@ -86,65 +93,67 @@ public class ClientDao {
             }
             System.out.println(preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
-            List<ClientEntity> clients = new ArrayList<>();
+            List<ProductEntity> productEntities = new ArrayList<>();
             while (resultSet.next()){
-                clients.add(buildClient(resultSet));
+                productEntities.add(buildProduct(resultSet));
             }
-            return clients;
+            return productEntities;
         } catch (SQLException throwables) {
             throw new DaoException(throwables);
         }
     }
 
-    public List<ClientEntity> findAll(){
+    public List<ProductEntity> findAll(){
         try (Connection connection = ConnectionManager.get();
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL_SQL)) {
             ResultSet resultSet = preparedStatement.executeQuery();
-            List<ClientEntity> clients = new ArrayList<>();
+            List<ProductEntity> productEntities = new ArrayList<>();
             while (resultSet.next()){
-                clients.add(buildClient(resultSet));
+                productEntities.add(buildProduct(resultSet));
             }
-            return clients;
+            return productEntities;
         } catch (SQLException throwables) {
             throw new DaoException(throwables);
         }
     }
 
-    public Optional<ClientEntity> findById(Long id){
+    public Optional<ProductEntity> findById(Long id){
         try (Connection connection = ConnectionManager.get();
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID_SQL)) {
             preparedStatement.setLong(1, id);
 
             ResultSet resultSet = preparedStatement.executeQuery();
-            ClientEntity clientEntity = null;
+            ProductEntity productEntity = null;
             if (resultSet.next()){
-                clientEntity = buildClient(resultSet);
+                productEntity = buildProduct(resultSet);
             }
 
-            return Optional.ofNullable(clientEntity);
+            return Optional.ofNullable(productEntity);
         } catch (SQLException throwables) {
             throw new DaoException(throwables);
         }
     }
 
-    private static ClientEntity buildClient(ResultSet resultSet) throws SQLException {
-        return new ClientEntity(
+    private static ProductEntity buildProduct(ResultSet resultSet) throws SQLException {
+        return new ProductEntity(
                 resultSet.getLong("id"),
-                resultSet.getString("f_name"),
-                resultSet.getString("l_name"),
-                resultSet.getString("email"),
-                resultSet.getInt("admission_id")
+                resultSet.getString("product_name"),
+                resultSet.getInt("price"),
+                resultSet.getInt("category_id"),
+                resultSet.getInt("manufacturer_id"),
+                resultSet.getInt("quantity")
         );
     }
 
-    public void update(ClientEntity client){
+    public void update(ProductEntity productEntity){
         try (Connection connection = ConnectionManager.get();
              PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_SQL)) {
-            preparedStatement.setString(1, client.getfName());
-            preparedStatement.setString(2, client.getlName());
-            preparedStatement.setString(3, client.getEmail());
-            preparedStatement.setInt(4, client.getAdmissionId());
-            preparedStatement.setLong(5, client.getId());
+            preparedStatement.setString(1, productEntity.getProductName());
+            preparedStatement.setInt(2, productEntity.getPrice());
+            preparedStatement.setInt(3, productEntity.getCategoryId());
+            preparedStatement.setInt(4, productEntity.getManufacturerId());
+            preparedStatement.setInt(5, productEntity.getQuantity());
+            preparedStatement.setLong(6, productEntity.getId());
 
             preparedStatement.executeUpdate();
         } catch (SQLException throwables) {
@@ -152,21 +161,22 @@ public class ClientDao {
         }
     }
 
-    public ClientEntity save(ClientEntity client){
+    public ProductEntity save(ProductEntity productEntity){
         try (Connection connection = ConnectionManager.get();
              PreparedStatement preparedStatement = connection.prepareStatement(SAVE_SQL, Statement.RETURN_GENERATED_KEYS)) {
-            preparedStatement.setString(1, client.getfName());
-            preparedStatement.setString(2, client.getlName());
-            preparedStatement.setString(3, client.getEmail());
-            preparedStatement.setInt(4, client.getAdmissionId());
+            preparedStatement.setString(1, productEntity.getProductName());
+            preparedStatement.setInt(2, productEntity.getPrice());
+            preparedStatement.setInt(3, productEntity.getCategoryId());
+            preparedStatement.setInt(4, productEntity.getManufacturerId());
+            preparedStatement.setInt(5, productEntity.getQuantity());
 
             preparedStatement.executeUpdate();
 
             ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
             if (generatedKeys.next()){
-                client.setId(generatedKeys.getLong("id"));
+                productEntity.setId(generatedKeys.getLong("id"));
             }
-            return client;
+            return productEntity;
         } catch (SQLException throwables) {
             throw new DaoException(throwables);
         }
@@ -183,7 +193,7 @@ public class ClientDao {
         }
     }
 
-    public static ClientDao getInstance(){
+    public static ProductDao getInstance(){
         return INSTANCE;
     }
 }

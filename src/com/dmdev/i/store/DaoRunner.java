@@ -6,6 +6,10 @@ import com.dmdev.i.store.entity.ClientEntity;
 
 import java.util.List;
 import java.util.Optional;
+/**
+ * Необходимо выбрать тему, спроектировать схему базы данных для нее
+ * и написать DAO с как минимум основными CRUD операциями для каждой сущности.
+ */
 
 public class DaoRunner {
 

@@ -1,7 +1,8 @@
 package com.dmdev.i.store.dao;
 
-import com.dmdev.i.store.dto.ClientEntityFilter;
+import com.dmdev.i.store.dto.PurchaseEntityFilter;
 import com.dmdev.i.store.entity.ClientEntity;
+import com.dmdev.i.store.entity.PurchaseEntity;
 import com.dmdev.i.store.exception.DaoException;
 import com.dmdev.i.store.util.ConnectionManager;
 
@@ -9,68 +10,71 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
 
-/**
- * Необходимо выбрать тему, спроектировать схему базы данных для нее
- * и написать DAO с как минимум основными CRUD операциями для каждой сущности.
- */
+public class PurchaseDao {
 
-public class ClientDao {
 
-    public static final ClientDao INSTANCE = new ClientDao();
+
+    public static final PurchaseDao INSTANCE = new PurchaseDao();
     public static final String DELETE_SQL = """
-            DELETE FROM client
+            DELETE FROM purchase
             WHERE id = ?
             """;
     public static final String SAVE_SQL = """
-            INSERT INTO client(f_name, l_name, email, admission_id) 
-            VALUES (?, ?, ?, ?)
+            INSERT INTO purchase(store_id, product_id, product_price, client_id, purchase_status_id) 
+            VALUES (?, ?, ?, ?, ?)
             """;
 
     public static final String UPDATE_SQL = """
-            UPDATE client
-            SET f_name = ?,
-                l_name = ?,
-                email = ?,
-                admission_id = ?
+            UPDATE purchase
+            SET store_id = ?,
+                product_id = ?,
+                product_price = ?,
+                client_id = ?,
+                purchase_status_id = ?
             WHERE id = ?
             """;
 
     public static final String FIND_ALL_SQL = """
             SELECT id, 
-                    f_name, 
-                    l_name, 
-                    email, 
-                    admission_id
-            FROM client
+                    store_id, 
+                    product_id, 
+                    product_price, 
+                    client_id,
+                    purchase_status_id
+            FROM purchase
             """;
 
     public static final String FIND_BY_ID_SQL = """
             SELECT id, 
-                    f_name, 
-                    l_name, 
-                    email, 
-                    admission_id
-            FROM client
+                    store_id, 
+                    product_id, 
+                    product_price, 
+                    client_id,
+                    purchase_status_id
+            FROM purchase
             WHERE id = ?
             """;
 
-    private ClientDao(){
+    private PurchaseDao(){
     }
 
-    public List<ClientEntity> findAll(ClientEntityFilter filter){
+    public List<PurchaseEntity> findAll(PurchaseEntityFilter filter){
         List<Object> parameters = new ArrayList<>();
         List<String> whereSql = new ArrayList<>();
-        if (filter.email() != null){
-            whereSql.add("email LIKE ?");
-            parameters.add("%" + filter.email() + "%");
+        if (filter.productId() != null){
+            whereSql.add("product_id = ?");
+            parameters.add(filter.productId());
         }
-        if (filter.fName() != null){
-            whereSql.add("f_name = ?");
-            parameters.add(filter.fName());
+        if (filter.clientId() != null){
+            whereSql.add("client_id = ?");
+            parameters.add(filter.clientId());
+        }
+        if (filter.purchaseStatusId() != null){
+            whereSql.add("purchase_status_id = ?");
+            parameters.add(filter.purchaseStatusId());
         }
         parameters.add(filter.limit());
         parameters.add(filter.offset());
@@ -86,65 +90,67 @@ public class ClientDao {
             }
             System.out.println(preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
-            List<ClientEntity> clients = new ArrayList<>();
+            List<PurchaseEntity> purchaseEntities = new ArrayList<>();
             while (resultSet.next()){
-                clients.add(buildClient(resultSet));
+                purchaseEntities.add(buildPurchase(resultSet));
             }
-            return clients;
+            return purchaseEntities;
         } catch (SQLException throwables) {
             throw new DaoException(throwables);
         }
     }
 
-    public List<ClientEntity> findAll(){
+    public List<PurchaseEntity> findAll(){
         try (Connection connection = ConnectionManager.get();
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL_SQL)) {
             ResultSet resultSet = preparedStatement.executeQuery();
-            List<ClientEntity> clients = new ArrayList<>();
+            List<PurchaseEntity> purchaseEntities = new ArrayList<>();
             while (resultSet.next()){
-                clients.add(buildClient(resultSet));
+                purchaseEntities.add(buildPurchase(resultSet));
             }
-            return clients;
+            return purchaseEntities;
         } catch (SQLException throwables) {
             throw new DaoException(throwables);
         }
     }
 
-    public Optional<ClientEntity> findById(Long id){
+    public Optional<PurchaseEntity> findById(Long id){
         try (Connection connection = ConnectionManager.get();
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID_SQL)) {
             preparedStatement.setLong(1, id);
 
             ResultSet resultSet = preparedStatement.executeQuery();
-            ClientEntity clientEntity = null;
+            PurchaseEntity purchaseEntity = null;
             if (resultSet.next()){
-                clientEntity = buildClient(resultSet);
+                purchaseEntity = buildPurchase(resultSet);
             }
 
-            return Optional.ofNullable(clientEntity);
+            return Optional.ofNullable(purchaseEntity);
         } catch (SQLException throwables) {
             throw new DaoException(throwables);
         }
     }
 
-    private static ClientEntity buildClient(ResultSet resultSet) throws SQLException {
-        return new ClientEntity(
+    private static PurchaseEntity buildPurchase(ResultSet resultSet) throws SQLException {
+        return new PurchaseEntity(
                 resultSet.getLong("id"),
-                resultSet.getString("f_name"),
-                resultSet.getString("l_name"),
-                resultSet.getString("email"),
-                resultSet.getInt("admission_id")
+                resultSet.getInt("store_id"),
+                resultSet.getLong("product_id"),
+                resultSet.getInt("product_price"),
+                resultSet.getLong("client_id"),
+                resultSet.getInt("purchase_status_id")
         );
     }
 
-    public void update(ClientEntity client){
+    public void update(PurchaseEntity purchaseEntity){
         try (Connection connection = ConnectionManager.get();
              PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_SQL)) {
-            preparedStatement.setString(1, client.getfName());
-            preparedStatement.setString(2, client.getlName());
-            preparedStatement.setString(3, client.getEmail());
-            preparedStatement.setInt(4, client.getAdmissionId());
-            preparedStatement.setLong(5, client.getId());
+            preparedStatement.setInt(1, purchaseEntity.getStoreId());
+            preparedStatement.setLong(2, purchaseEntity.getProductId());
+            preparedStatement.setInt(3, purchaseEntity.getProductPrice());
+            preparedStatement.setLong(4, purchaseEntity.getClientId());
+            preparedStatement.setInt(5, purchaseEntity.getPurchaseStatusId());
+            preparedStatement.setLong(6, purchaseEntity.getId());
 
             preparedStatement.executeUpdate();
         } catch (SQLException throwables) {
@@ -152,21 +158,22 @@ public class ClientDao {
         }
     }
 
-    public ClientEntity save(ClientEntity client){
+    public PurchaseEntity save(PurchaseEntity purchaseEntity){
         try (Connection connection = ConnectionManager.get();
              PreparedStatement preparedStatement = connection.prepareStatement(SAVE_SQL, Statement.RETURN_GENERATED_KEYS)) {
-            preparedStatement.setString(1, client.getfName());
-            preparedStatement.setString(2, client.getlName());
-            preparedStatement.setString(3, client.getEmail());
-            preparedStatement.setInt(4, client.getAdmissionId());
+            preparedStatement.setInt(1, purchaseEntity.getStoreId());
+            preparedStatement.setLong(2, purchaseEntity.getProductId());
+            preparedStatement.setInt(3, purchaseEntity.getProductPrice());
+            preparedStatement.setLong(4, purchaseEntity.getClientId());
+            preparedStatement.setInt(5, purchaseEntity.getPurchaseStatusId());
 
             preparedStatement.executeUpdate();
 
             ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
             if (generatedKeys.next()){
-                client.setId(generatedKeys.getLong("id"));
+                purchaseEntity.setId(generatedKeys.getLong("id"));
             }
-            return client;
+            return purchaseEntity;
         } catch (SQLException throwables) {
             throw new DaoException(throwables);
         }
@@ -183,7 +190,7 @@ public class ClientDao {
         }
     }
 
-    public static ClientDao getInstance(){
+    public static PurchaseDao getInstance(){
         return INSTANCE;
     }
 }
